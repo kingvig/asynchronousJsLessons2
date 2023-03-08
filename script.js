@@ -2,6 +2,12 @@
 const btn = document.querySelector('.btn-country');
 const countriesContainer = document.querySelector('.countries');
 
+const renderError=function(msg) {
+    countriesContainer.insertAdjacentText('beforeend', msg);
+    //countriesContainer.style.opacity=1;
+};
+
+
 const renderCountry = function (data) {
   const html = `
     <article class="country">
@@ -15,12 +21,18 @@ const renderCountry = function (data) {
           </div>
     </article>`;
   countriesContainer.insertAdjacentHTML('beforeend', html);
-  countriesContainer.style.opacity = '1';
+  //countriesContainer.style.opacity = '1';
 };
 
 const getCountryData = function (country) {
   fetch(`https://restcountries.com/v2/name/${country}`)
-    .then((response) =>response.json())
+    .then((response) =>{
+        if(!response.ok) {
+            throw new Error(`country not found (${response.status})`);
+        }
+        return response.json()
+    }
+    )
     .then( (data)=>{
         renderCountry(data[0]);
         const neighbour=data[0].borders[0];
@@ -29,7 +41,15 @@ const getCountryData = function (country) {
         }
         return fetch(`https://restcountries.com/v2/alpha/${neighbour}`);
     }).then(response => response.json())
-    .then(data=>renderCountry(data));
+    .then(data=>renderCountry(data))
+    .catch(err=>{
+        console.log(`${err}`);
+        renderError(`sommethin went wrong ${err}. Try again`);
+    })
+    .finally(()=>{
+        countriesContainer.style.opacity=1;
+    });
 };
-
-getCountryData('usa');
+btn.addEventListener('click',function(){
+    getCountryData('usa');
+})
